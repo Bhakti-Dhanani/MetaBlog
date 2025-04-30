@@ -20,6 +20,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      // 1. Authenticate user
       const response = await fetch('http://localhost:1337/api/auth/local', {
         method: 'POST',
         headers: {
@@ -37,48 +38,40 @@ const Login = () => {
         throw new Error(data.error?.message || 'Login failed');
       }
 
+      // 2. Store tokens
       localStorage.setItem('jwt', data.jwt);
       
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('role', data.user.role?.name || '');
-        
-        if (data.user.role?.name === 'Tenant Admin') {
-          router.push('/dashboard/employer');
-        } else if (data.user.role?.name === 'Contributor') {
-          router.push('/dashboard/contributor');
-        } else {
-          router.push('/');
-        }
-        return;
-      }
-      
-      const userResponse = await fetch('http://localhost:1337/api/users/me?populate=role', {
+      // 3. Get complete user data with role information
+      const userResponse = await fetch(`http://localhost:1337/api/users/me?populate=role`, {
         headers: {
           'Authorization': `Bearer ${data.jwt}`,
-          'Content-Type': 'application/json',
         },
       });
 
       if (!userResponse.ok) {
-        router.push('/');
-        return;
+        throw new Error('Failed to fetch user data');
       }
 
       const userData = await userResponse.json();
+      
+      // 4. Store user data
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('role', userData.role?.name || '');
-      
+
+      // 5. Redirect based on role
       if (userData.role?.name === 'Tenant Admin') {
-        router.push('/dashboard/employer');
+        // Use window.location for full page reload to ensure auth state is properly initialized
+        window.location.href = '/dashboard/tenant-admin';
       } else if (userData.role?.name === 'Contributor') {
-        router.push('/dashboard/contributor');
+        window.location.href = '/dashboard/contributor';
       } else {
-        router.push('/');
+        window.location.href = '/';
       }
+
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
+      // Clear any stored credentials on error
       localStorage.removeItem('jwt');
       localStorage.removeItem('user');
       localStorage.removeItem('role');
@@ -116,6 +109,7 @@ const Login = () => {
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                   required
+                  autoComplete="username"
                 />
               </div>
               
@@ -131,6 +125,7 @@ const Login = () => {
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                   required
+                  autoComplete="current-password"
                 />
               </div>
               
@@ -143,9 +138,19 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full py-2 px-4 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition flex items-center justify-center ${isLoading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                className={`w-full py-2 px-4 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition flex items-center justify-center ${
+                  isLoading ? 'opacity-75 cursor-not-allowed' : ''
+                }`}
               >
-                {isLoading ? 'Logging in...' : (
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Logging in...
+                  </>
+                ) : (
                   <>
                     Login <FiArrowRight className="ml-2" />
                   </>
