@@ -18,10 +18,6 @@ export default [
   'strapi::session',
   'strapi::favicon',
   'strapi::public',
-
-  // ✅ Correct format for custom middleware
-  {
-    name: 'global::swagger',
-    resolve: './src/middlewares/swagger.ts', // <-- use resolve, not path
-  },
+  
+  
 ];
