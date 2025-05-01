@@ -15,9 +15,17 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
   const editor = useEditor({
     extensions: [StarterKit],
     content: value,
+    editorProps: {
+      attributes: {
+        class: 'prose max-w-none focus:outline-none p-3 min-h-[200px] bg-white',
+      },
+    },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    // Explicitly disable immediate rendering for SSR
+    autofocus: false,
+    injectCSS: false,
   });
 
   useEffect(() => {
@@ -28,9 +36,29 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
 
   useEffect(() => {
     setMounted(true);
+    return () => {
+      editor?.destroy();
+    };
   }, []);
 
-  if (!mounted) return <div className="border rounded-md p-2 min-h-[150px] bg-gray-50"></div>;
+  if (!mounted) {
+    return (
+      <div className="border rounded-md overflow-hidden">
+        <div className="border-b p-1 bg-gray-50 flex space-x-1">
+          <button className="p-1 rounded" disabled>
+            <span className="font-bold">B</span>
+          </button>
+          <button className="p-1 rounded" disabled>
+            <span className="italic">I</span>
+          </button>
+          <button className="p-1 rounded" disabled>
+            <span className="text-sm">• List</span>
+          </button>
+        </div>
+        <div className="p-3 min-h-[200px] bg-white"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="border rounded-md overflow-hidden">
@@ -38,6 +66,7 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
         <button
           type="button"
           onClick={() => editor?.chain().focus().toggleBold().run()}
+          disabled={!editor}
           className={`p-1 rounded ${editor?.isActive('bold') ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
         >
           <span className="font-bold">B</span>
@@ -45,6 +74,7 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
         <button
           type="button"
           onClick={() => editor?.chain().focus().toggleItalic().run()}
+          disabled={!editor}
           className={`p-1 rounded ${editor?.isActive('italic') ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
         >
           <span className="italic">I</span>
@@ -52,6 +82,7 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
         <button
           type="button"
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
+          disabled={!editor}
           className={`p-1 rounded ${editor?.isActive('bulletList') ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
         >
           <span className="text-sm">• List</span>
@@ -59,7 +90,6 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
       </div>
       <EditorContent
         editor={editor}
-        className="p-3 min-h-[200px] prose max-w-none"
       />
     </div>
   );
