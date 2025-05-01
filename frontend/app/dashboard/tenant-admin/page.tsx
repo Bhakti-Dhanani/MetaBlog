@@ -1,15 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { 
-  FiHome, 
   FiFileText, 
-  FiTag, 
   FiList, 
-  FiMail, 
-  FiSettings, 
-  FiUsers, 
+  FiTag, 
+  FiUsers,
   FiUser,
   FiBell,
   FiSearch,
@@ -18,7 +15,11 @@ import {
 import TenantHeader from "@/components/dashboard/TenantHeader";
 import RichTextEditor from "@/components/dashboard/RichTextEditor";
 import ThemeProvider from "@/components/dashboard/ThemeProvider";
+import Sidebar from "@/components/dashboard/Sidebar";
 import { useTenant } from "@/lib/hooks/useTenant";
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'] });
 
 interface User {
   id: number;
@@ -36,6 +37,7 @@ interface User {
 
 const DashboardPage = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { tenant, loading: tenantLoading, error: tenantError } = useTenant();
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,11 +73,15 @@ const DashboardPage = () => {
     } catch (err) {
       console.error('Session verification failed:', err);
       setError(err instanceof Error ? err.message : 'Authentication failed');
-      localStorage.clear();
-      router.push('/auth/login');
+      handleLogout();
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push('/auth/login');
   };
 
   useEffect(() => {
@@ -84,7 +90,7 @@ const DashboardPage = () => {
 
   if (loading || tenantLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className={`flex justify-center items-center min-h-screen ${inter.className}`}>
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -92,8 +98,8 @@ const DashboardPage = () => {
 
   if (error || tenantError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 w-full max-w-md">
+      <div className={`flex flex-col items-center justify-center min-h-screen p-4 ${inter.className}`}>
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 w-full max-w-md rounded-lg">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
@@ -106,7 +112,7 @@ const DashboardPage = () => {
           </div>
           <button
             onClick={verifySession}
-            className="mt-3 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            className="mt-3 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150"
           >
             Try Again
           </button>
@@ -117,131 +123,102 @@ const DashboardPage = () => {
 
   return (
     <ThemeProvider>
-      <div className="flex h-screen bg-gray-50 overflow-hidden">
-        {/* Sidebar */}
-        <div className={`fixed inset-y-0 left-0 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-200 ease-in-out z-30 w-64 bg-white shadow-md`}>
-          <div className="p-4 border-b">
-            <div className="flex items-center">
-              {tenant?.attributes?.logo?.data?.attributes?.url && (
-                <img 
-                  src={tenant.attributes.logo.data.attributes.url}
-                  alt={tenant.attributes.name}
-                  className="w-10 h-10 rounded-md mr-3 object-cover"
-                />
-              )}
-              <div>
-                <h1 className="text-lg font-bold">{tenant?.attributes?.name}</h1>
-                <p className="text-xs text-gray-500">Admin Dashboard</p>
-              </div>
-            </div>
-          </div>
-          <nav className="p-4">
-            <ul className="space-y-2">
-              {[
-                { name: 'Dashboard', href: '/dashboard/tenant-admin', icon: FiHome },
-                { name: 'Posts', href: '/dashboard/tenant-admin/posts', icon: FiFileText },
-                { name: 'Categories', href: '/dashboard/tenant-admin/categories', icon: FiList },
-                { name: 'Tags', href: '/dashboard/tenant-admin/tags', icon: FiTag },
-                { name: 'Authors', href: '/dashboard/tenant-admin/authors', icon: FiUsers },
-                { name: 'Subscribers', href: '/dashboard/tenant-admin/subscribers', icon: FiMail },
-                { name: 'Settings', href: '/dashboard/tenant-admin/settings', icon: FiSettings },
-              ].map((item) => (
-                <li key={item.name}>
-                  <a
-                    href={item.href}
-                    className={`flex items-center p-2 rounded-lg ${
-                      location.pathname === item.href 
-                        ? 'bg-blue-50 text-blue-600' 
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    <item.icon className="mr-3" />
-                    {item.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+      <div className={`flex h-screen bg-gray-50 overflow-hidden ${inter.className}`}>
+        {/* Mobile Sidebar with overlay */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Sidebar Component */}
+        <div className={`fixed inset-y-0 left-0 z-50 w-64 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out`}>
+          <Sidebar />
         </div>
 
-        {/* Main Content */}
+        {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <TenantHeader />
+          <TenantHeader 
+            onMenuToggle={() => setSidebarOpen(!sidebarOpen)} 
+            onLogout={handleLogout}
+          />
           
-          <main className="flex-1 overflow-y-auto p-6 bg-gray-100">
-            <div className="max-w-7xl mx-auto">
-              {/* Dashboard Header */}
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
-                    {tenant && (
-                      <p className="text-gray-600 mt-2">
-                        Managing: <span className="font-medium">{tenant.attributes.name}</span>
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                      {user?.role.name}
-                    </span>
-                  </div>
+          {/* Main Content Container */}
+          <main className="flex-1 overflow-y-auto">
+            {/* Dashboard Header */}
+            <div className="bg-white p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-xl font-bold text-gray-800">Dashboard Overview</h1>
+                  {tenant && (
+                    <p className="text-gray-600 text-sm">
+                      Managing: <span className="font-medium">{tenant.attributes.name}</span>
+                    </p>
+                  )}
                 </div>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {user?.role.name}
+                </span>
               </div>
+            </div>
 
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                {[
-                  { title: 'Total Posts', value: stats.posts, icon: FiFileText },
-                  { title: 'Categories', value: stats.categories, icon: FiList },
-                  { title: 'Tags', value: stats.tags, icon: FiTag },
-                  { title: 'Subscribers', value: stats.subscribers, icon: FiUsers },
-                ].map((stat) => (
-                  <div key={stat.title} className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 rounded-full bg-blue-50 text-blue-600 mr-4">
-                        <stat.icon className="text-xl" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">{stat.title}</p>
-                        <p className="text-2xl font-semibold">{stat.value}</p>
-                      </div>
+            {/* Stats Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-2">
+              {[
+                { title: 'Posts', value: stats.posts, icon: FiFileText, color: 'bg-blue-100 text-blue-600' },
+                { title: 'Categories', value: stats.categories, icon: FiList, color: 'bg-green-100 text-green-600' },
+                { title: 'Tags', value: stats.tags, icon: FiTag, color: 'bg-purple-100 text-purple-600' },
+                { title: 'Subscribers', value: stats.subscribers, icon: FiUsers, color: 'bg-orange-100 text-orange-600' },
+              ].map((stat) => (
+                <div key={stat.title} className="bg-white rounded-lg shadow p-3 border border-gray-200">
+                  <div className="flex items-center">
+                    <div className={`p-2 rounded-full ${stat.color} mr-3`}>
+                      <stat.icon className="text-lg" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">{stat.title}</p>
+                      <p className="text-xl font-bold text-gray-800">{stat.value}</p>
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 p-2">
+              {/* Quick Draft Section */}
+              <div className="bg-white rounded-lg shadow p-3 border border-gray-200">
+                <h3 className="text-md font-bold text-gray-800 mb-2">Quick Draft</h3>
+                <RichTextEditor 
+                  value="<p>Start writing your new post here...</p>" 
+                  onChange={(content: string) => console.log(content)} 
+                />
+                <div className="mt-2 flex justify-end">
+                  <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium">
+                    Save Draft
+                  </button>
+                </div>
               </div>
 
-              {/* Quick Draft Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h3 className="text-lg font-medium text-gray-800 mb-4">Quick Draft</h3>
-                  <RichTextEditor 
-                    value="<p>Start writing your new post here...</p>" 
-                    onChange={(content) => console.log(content)} 
-                  />
-                  <div className="mt-4 flex justify-end">
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                      Save Draft
-                    </button>
-                  </div>
+              {/* Recent Activity Section */}
+              <div className="bg-white rounded-lg shadow p-3 border border-gray-200">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-md font-bold text-gray-800">Recent Activity</h3>
+                  <button className="text-xs text-blue-600 hover:text-blue-800">View All</button>
                 </div>
-
-                {/* Recent Activity */}
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h3 className="text-lg font-medium text-gray-800 mb-4">Recent Activity</h3>
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((item) => (
-                      <div key={item} className="flex items-start pb-4 border-b border-gray-100 last:border-0">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                          <FiUser className="text-gray-500" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">New post created</p>
-                          <p className="text-xs text-gray-500">2 hours ago</p>
-                        </div>
+                <div className="space-y-2">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="flex items-start pb-2 border-b border-gray-100 last:border-0">
+                      <div className="flex-shrink-0 h-7 w-7 rounded-full bg-gray-100 flex items-center justify-center mr-2">
+                        <FiUser className="text-gray-500 text-xs" />
                       </div>
-                    ))}
-                  </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-800 truncate">New post created</p>
+                        <p className="text-2xs text-gray-500">2 hours ago</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

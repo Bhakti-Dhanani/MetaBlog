@@ -1,75 +1,51 @@
 "use client";
 
-import { useTenant } from '@/lib/hooks/useTenant';
-import { FiLogOut, FiUser, FiBell, FiSearch } from 'react-icons/fi';
-import Link from 'next/link';
+import { FiMenu, FiBell, FiSearch, FiLogOut } from "react-icons/fi";
 
-interface Tenant {
-  id: number;
-  attributes: {
-    name: string;
-    slug: string;
-    description?: string;
-    logo?: {
-      data?: {
-        attributes?: {
-          url: string;
-        };
-      };
-    };
-    theme_settings: {
-      primaryColor: string;
-      secondaryColor: string;
-      fontFamily: string;
-    };
-  };
+interface TenantHeaderProps {
+  onMenuToggle: () => void;
+  onLogout: () => void;
 }
 
-export default function TenantHeader() {
-  const { tenant } = useTenant();
-
+export default function TenantHeader({ onMenuToggle, onLogout }: TenantHeaderProps) {
   return (
-    <header className="bg-white shadow-sm">
-      <div className="px-6 py-4 flex items-center justify-between">
+    <header className="bg-white shadow-xs border-b border-gray-100 p-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center">
-          {tenant?.attributes?.logo?.data?.attributes?.url && (
-            <img 
-              src={tenant.attributes.logo.data.attributes.url}
-              alt={`${tenant.attributes.name} logo`}
-              className="h-8 w-auto mr-3"
-            />
-          )}
-          <Link 
-            href="/dashboard/tenant-admin" 
-            className="text-xl font-semibold text-gray-800"
+          <button
+            onClick={onMenuToggle}
+            className="md:hidden p-2 text-gray-500 rounded-lg hover:bg-gray-100 mr-2"
+            aria-label="Toggle menu"
           >
-            {tenant?.attributes?.name || 'Dashboard'}
-          </Link>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FiMenu className="text-xl" />
+          </button>
+          <div className="relative max-w-xs w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiSearch className="text-gray-400" />
+            </div>
             <input
               type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               placeholder="Search..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Search dashboard"
             />
           </div>
-          
-          <button className="p-2 text-gray-600 hover:text-gray-900">
+        </div>
+        <div className="flex items-center space-x-4">
+          <button 
+            className="p-2 text-gray-500 rounded-lg hover:bg-gray-100 relative"
+            aria-label="Notifications"
+          >
             <FiBell className="text-xl" />
+            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
-          
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-              <FiUser className="text-blue-600" />
-            </div>
-            <button className="flex items-center text-gray-600 hover:text-gray-900">
-              <span className="mr-1">Admin</span>
-              <FiLogOut className="text-sm" />
-            </button>
-          </div>
+          <button 
+            onClick={onLogout}
+            className="p-2 text-gray-500 rounded-lg hover:bg-gray-100 transition-colors duration-150"
+            aria-label="Logout"
+          >
+            <FiLogOut className="text-xl" />
+          </button>
         </div>
       </div>
     </header>
