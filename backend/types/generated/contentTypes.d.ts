@@ -576,7 +576,7 @@ export interface ApiTenantTenant extends Struct.CollectionTypeSchema {
     singularName: 'tenant';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     authors: Schema.Attribute.Relation<'oneToMany', 'api::author.author'>;

@@ -36,5 +36,16 @@ export default {
       path: '/tenant/users/me',
       handler: 'tenant.me',
     },
+    {
+        method: 'PUT',
+        path: '/tenants/theme-settings',
+        handler: 'tenant.updateThemeSettings',
+    },
+    {
+        method: 'GET',
+        path: '/tenants/theme-settings',
+        handler: 'tenant.getThemeSettings',
+    }
   ],
 };
+
